@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Treino Cognitivo | Decision Reaction</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0b132b;
+      color: #fff;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 90%;
+      max-width: 600px;
+      height: 400px;
+      margin: 30px auto;
+      background: #1c2541;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .target {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    #stats {
+      margin-top: 15px;
+      font-size: 18px;
+    }
+
+    #instruction {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #6fffe9;
+      font-weight: bold;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #5bc0be;
+      color: #000;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #6fffe9;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Treino Cognitivo – Decisão & Reação</h1>
+  <p id="instruction">Clique APENAS no círculo VERDE</p>
+
+  <div id="gameArea"></div>
+
+  <div id="stats">
+    ⏱ Tempo médio (acertos): <span id="avgTime">0</span> ms <br>
+    🎯 Acertos corretos: <span id="hits">0</span> / 10 <br>
+    ❌ Erros: <span id="misses">0</span>
+  </div>
+
+  <button onclick="startGame()">Iniciar Treino</button>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const avgTimeEl = document.getElementById("avgTime");
+    const hitsEl = document.getElementById("hits");
+    const missesEl = document.getElementById("misses");
+
+    const correctColor = "rgb(138, 201, 38)"; // VERDE
+    const colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93"];
+
+    let startTime = 0;
+    let reactionTimes = [];
+    let hits = 0;
+    let misses = 0;
+    let rounds = 0;
+    const maxRounds = 10;
+
+    function startGame() {
+      reactionTimes = [];
+      hits = 0;
+      misses = 0;
+      rounds = 0;
+      avgTimeEl.textContent = 0;
+      hitsEl.textContent = "0 / 10";
+      missesEl.textContent = "0";
+      gameArea.innerHTML = "";
+      spawnTarget();
+    }
+
+    function spawnTarget() {
+      if (rounds >= maxRounds) {
+        finishGame();
+        return;
+      }
+
+      rounds++;
+
+      const target = document.createElement("div");
+      target.classList.add("target");
+
+      target.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+      const x = Math.random() * (gameArea.clientWidth - 60);
+      const y = Math.random() * (gameArea.clientHeight - 60);
+
+      target.style.left = `${x}px`;
+      target.style.top = `${y}px`;
+
+      startTime = performance.now();
+
+      target.onclick = () => {
+        if (target.style.background !== correctColor) {
+          misses++;
+          missesEl.textContent = misses;
+          target.remove();
+          spawnTarget();
+          return;
+        }
+
+        const reactionTime = Math.round(performance.now() - startTime);
+        reactionTimes.push(reactionTime);
+        hits++;
+        hitsEl.textContent = `${hits} / 10`;
+        target.remove();
+        spawnTarget();
+      };
+
+      gameArea.appendChild(target);
+    }
+
+    function finishGame() {
+      const avg =
+        reactionTimes.length > 0
+          ? reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length
+          : 0;
+
+      avgTimeEl.textContent = Math.round(avg);
+      gameArea.innerHTML = "<h2>Treino finalizado</h2>";
+    }
+  </script>
+
+</body>
+</html>
