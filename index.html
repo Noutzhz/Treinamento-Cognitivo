@@ -2,163 +2,397 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Treino Cognitivo | Decision Reaction</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pro Reaction | Treino Cognitivo Esportivo</title>
   <style>
+    :root {
+      --bg-color: #121212;
+      --panel-color: #1e1e24;
+      --accent-color: #00d4ff;
+      --go-color: #00ff66;
+      --nogo-color: #ff3333;
+      --text-color: #ffffff;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #0b132b;
-      color: #fff;
+      font-family: 'Roboto Mono', monospace; /* Fonte técnica */
+      background: var(--bg-color);
+      color: var(--text-color);
       text-align: center;
       margin: 0;
       padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      user-select: none; /* Evita seleção de texto ao tocar rápido */
     }
 
     h1 {
-      margin-top: 20px;
+      margin: 15px 0;
+      font-size: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent-color);
     }
 
-    #gameArea {
-      position: relative;
-      width: 90%;
-      max-width: 600px;
-      height: 400px;
-      margin: 30px auto;
-      background: #1c2541;
-      border-radius: 12px;
-      overflow: hidden;
+    /* O GRID (A Parede de Luzes) */
+    #grid-container {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr); /* 5x5 Grid */
+      gap: 10px;
+      width: 95%;
+      max-width: 500px;
+      aspect-ratio: 1 / 1;
+      margin: 10px auto;
+      background: var(--panel-color);
+      padding: 10px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
 
-    .target {
-      position: absolute;
-      width: 60px;
-      height: 60px;
+    .cell {
+      background: #2a2a35;
       border-radius: 50%;
       cursor: pointer;
+      transition: background 0.1s, transform 0.1s;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+      position: relative;
     }
 
-    #stats {
-      margin-top: 15px;
-      font-size: 18px;
+    /* Estados das Luzes */
+    .cell.active-go {
+      background: var(--go-color);
+      box-shadow: 0 0 15px var(--go-color);
+      transform: scale(0.95);
     }
 
-    #instruction {
-      margin-top: 10px;
-      font-size: 16px;
-      color: #6fffe9;
+    .cell.active-nogo {
+      background: var(--nogo-color);
+      box-shadow: 0 0 15px var(--nogo-color);
+    }
+
+    /* Painel de Controle e Stats */
+    #hud {
+      display: flex;
+      justify-content: space-around;
+      width: 90%;
+      max-width: 600px;
+      background: #1a1a1a;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #333;
+    }
+
+    .stat-box {
+      font-size: 0.9rem;
+    }
+    .stat-value {
+      font-size: 1.2rem;
       font-weight: bold;
+      color: var(--accent-color);
+      display: block;
+    }
+
+    /* Controles */
+    #controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     button {
-      margin-top: 20px;
-      padding: 12px 24px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: #5bc0be;
+      background: var(--accent-color);
       color: #000;
+      border: none;
+      padding: 12px 25px;
+      font-size: 1rem;
       font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: 0.2s;
     }
 
     button:hover {
       background: #6fffe9;
+      transform: translateY(-2px);
     }
+
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    select {
+      padding: 10px;
+      border-radius: 5px;
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+    }
+
+    #message {
+      height: 20px;
+      color: #ffcc00;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
   </style>
 </head>
 <body>
 
-  <h1>Treino Cognitivo – Decisão & Reação</h1>
-  <p id="instruction">Clique APENAS no círculo VERDE</p>
+  <h1>Neuro Performance Lab</h1>
 
-  <div id="gameArea"></div>
-
-  <div id="stats">
-    ⏱ Tempo médio (acertos): <span id="avgTime">0</span> ms <br>
-    🎯 Acertos corretos: <span id="hits">0</span> / 10 <br>
-    ❌ Erros: <span id="misses">0</span>
+  <div id="hud">
+    <div class="stat-box">TEMPO<span class="stat-value" id="timerDisplay">30.0</span></div>
+    <div class="stat-box">SCORE<span class="stat-value" id="scoreDisplay">0</span></div>
+    <div class="stat-box">REACTION (ms)<span class="stat-value" id="msDisplay">--</span></div>
   </div>
 
-  <button onclick="startGame()">Iniciar Treino</button>
+  <div id="message"></div>
+
+  <div id="grid-container">
+    </div>
+
+  <div id="controls">
+    <select id="difficulty">
+      <option value="easy">Iniciante (Lento)</option>
+      <option value="medium" selected>Atleta (Médio)</option>
+      <option value="pro">Pro (Rápido + Distração)</option>
+    </select>
+    <button id="btnStart" onclick="startDrill()">Iniciar Treino</button>
+  </div>
 
   <script>
-    const gameArea = document.getElementById("gameArea");
-    const avgTimeEl = document.getElementById("avgTime");
-    const hitsEl = document.getElementById("hits");
-    const missesEl = document.getElementById("misses");
+    const gridContainer = document.getElementById('grid-container');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const msDisplay = document.getElementById('msDisplay');
+    const msgDisplay = document.getElementById('message');
+    const btnStart = document.getElementById('btnStart');
+    const difficultySelect = document.getElementById('difficulty');
 
-    const correctColor = "rgb(138, 201, 38)"; // VERDE
-    const colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93"];
-
-    let startTime = 0;
+    // Configurações do Treino
+    const gridSize = 25; // 5x5
+    let gameDuration = 30; // segundos
+    let timerInterval;
+    let spawnTimeout;
+    let isPlaying = false;
+    
+    // Estado do Jogo
+    let score = 0;
     let reactionTimes = [];
-    let hits = 0;
-    let misses = 0;
-    let rounds = 0;
-    const maxRounds = 10;
+    let currentTargetTime = 0;
+    let activeIndex = -1;
+    
+    // Configurações de Dificuldade
+    let config = {
+      spawnRate: 1000,    // Tempo entre aparições
+      lightDuration: 900, // Quanto tempo a luz fica acesa (janela de oportunidade)
+      distractionChance: 0 // Chance de aparecer luz vermelha
+    };
 
-    function startGame() {
-      reactionTimes = [];
-      hits = 0;
-      misses = 0;
-      rounds = 0;
-      avgTimeEl.textContent = 0;
-      hitsEl.textContent = "0 / 10";
-      missesEl.textContent = "0";
-      gameArea.innerHTML = "";
-      spawnTarget();
+    // Inicializa o Grid
+    function createGrid() {
+      gridContainer.innerHTML = '';
+      for (let i = 0; i < gridSize; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.dataset.index = i;
+        // Evento de toque/clique (Touchstart para resposta mais rápida no mobile)
+        cell.addEventListener('mousedown', () => handleInput(i));
+        cell.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(i); });
+        gridContainer.appendChild(cell);
+      }
     }
 
-    function spawnTarget() {
-      if (rounds >= maxRounds) {
-        finishGame();
-        return;
+    function setDifficulty() {
+      const level = difficultySelect.value;
+      if (level === 'easy') {
+        config.spawnRate = 1500;
+        config.lightDuration = 1200;
+        config.distractionChance = 0;
+      } else if (level === 'medium') {
+        config.spawnRate = 1000; // 1 segundo
+        config.lightDuration = 800; // Pisca rápido
+        config.distractionChance = 0.2; // 20% de chance de ser vermelho
+      } else { // Pro
+        config.spawnRate = 700;
+        config.lightDuration = 550; // Muito rápido
+        config.distractionChance = 0.4; // Muita distração
       }
+    }
 
-      rounds++;
+    function startDrill() {
+      if (isPlaying) return;
+      
+      setDifficulty();
+      createGrid(); // Reseta visual
+      
+      score = 0;
+      reactionTimes = [];
+      gameDuration = 30;
+      isPlaying = true;
+      
+      scoreDisplay.textContent = '0';
+      msDisplay.textContent = '--';
+      timerDisplay.textContent = gameDuration.toFixed(1);
+      msgDisplay.textContent = "VERDE = Toca / VERMELHO = Ignora";
+      
+      btnStart.disabled = true;
+      difficultySelect.disabled = true;
 
-      const target = document.createElement("div");
-      target.classList.add("target");
+      // Timer Global
+      timerInterval = setInterval(() => {
+        gameDuration -= 0.1;
+        timerDisplay.textContent = gameDuration.toFixed(1);
+        if (gameDuration <= 0) finishDrill();
+      }, 100);
 
-      target.style.background = colors[Math.floor(Math.random() * colors.length)];
+      // Loop de Luzes
+      nextLight();
+    }
 
-      const x = Math.random() * (gameArea.clientWidth - 60);
-      const y = Math.random() * (gameArea.clientHeight - 60);
+    function nextLight() {
+      if (!isPlaying) return;
 
-      target.style.left = `${x}px`;
-      target.style.top = `${y}px`;
+      // Limpa luz anterior se houver
+      clearLights();
 
-      startTime = performance.now();
+      // Intervalo aleatório pequeno para não ficar robótico
+      const randomDelay = Math.random() * 300 + 200; 
 
-      target.onclick = () => {
-        if (target.style.background !== correctColor) {
-          misses++;
-          missesEl.textContent = misses;
-          target.remove();
-          spawnTarget();
-          return;
+      spawnTimeout = setTimeout(() => {
+        if (!isPlaying) return;
+        
+        // Escolhe célula aleatória
+        activeIndex = Math.floor(Math.random() * gridSize);
+        const cells = document.querySelectorAll('.cell');
+        const cell = cells[activeIndex];
+
+        // Decide se é ALVO (Verde) ou DISTRAÇÃO (Vermelho)
+        const isDistraction = Math.random() < config.distractionChance;
+        
+        if (isDistraction) {
+          cell.classList.add('active-nogo');
+          cell.dataset.type = 'nogo';
+        } else {
+          cell.classList.add('active-go');
+          cell.dataset.type = 'go';
+          currentTargetTime = performance.now();
         }
 
-        const reactionTime = Math.round(performance.now() - startTime);
+        // Define o tempo que a luz fica acesa (Janela de Pressão)
+        // Se o usuário não clicar a tempo, conta como erro (miss)
+        setTimeout(() => {
+          if (isPlaying && cell.classList.contains('active-go')) {
+             // O jogador perdeu a janela de oportunidade
+             handleMiss();
+             cell.classList.remove('active-go');
+          } else if (isPlaying && cell.classList.contains('active-nogo')) {
+             // O jogador fez o certo (não clicou no vermelho), remove sem penalidade
+             cell.classList.remove('active-nogo');
+          }
+          
+          // Chama a próxima luz se o jogo ainda rolar
+          if (isPlaying && !document.querySelector('.active-go') && !document.querySelector('.active-nogo')) {
+             nextLight();
+          }
+        }, config.lightDuration);
+
+      }, randomDelay);
+    }
+
+    function handleInput(index) {
+      if (!isPlaying) return;
+      
+      const cells = document.querySelectorAll('.cell');
+      const cell = cells[index];
+
+      // CLIQUE NO VERDE (Correto)
+      if (cell.classList.contains('active-go')) {
+        const reactionTime = Math.round(performance.now() - currentTargetTime);
         reactionTimes.push(reactionTime);
-        hits++;
-        hitsEl.textContent = `${hits} / 10`;
-        target.remove();
-        spawnTarget();
-      };
-
-      gameArea.appendChild(target);
+        updateStats(reactionTime);
+        
+        score += 10;
+        scoreDisplay.textContent = score;
+        
+        // Flash visual de sucesso (opcional) e limpa
+        clearLights();
+        clearTimeout(spawnTimeout); 
+        nextLight(); // Imediatamente chama a próxima
+      } 
+      // CLIQUE NO VERMELHO (Erro de Impulso)
+      else if (cell.classList.contains('active-nogo')) {
+        score -= 5; // Penalidade
+        scoreDisplay.textContent = score;
+        msgDisplay.textContent = "NÃO TOQUE NO VERMELHO!";
+        flashScreen('#330000');
+        
+        clearLights();
+        clearTimeout(spawnTimeout);
+        nextLight();
+      }
+      // CLIQUE NO VAZIO (Erro espacial)
+      else {
+        score -= 1; // Penalidade leve
+        scoreDisplay.textContent = score;
+      }
     }
 
-    function finishGame() {
-      const avg =
-        reactionTimes.length > 0
-          ? reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length
-          : 0;
-
-      avgTimeEl.textContent = Math.round(avg);
-      gameArea.innerHTML = "<h2>Treino finalizado</h2>";
+    function handleMiss() {
+      // Perdeu o verde
+      msgDisplay.textContent = "MUITO LENTO!";
+      // Não tira ponto, mas perde a oportunidade de pontuar e afeta o ritmo
+      nextLight();
     }
+
+    function clearLights() {
+      const cells = document.querySelectorAll('.cell');
+      cells.forEach(c => {
+        c.classList.remove('active-go');
+        c.classList.remove('active-nogo');
+        delete c.dataset.type;
+      });
+    }
+
+    function updateStats(lastTime) {
+      // Calcula média
+      const avg = reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length;
+      msDisplay.textContent = `${lastTime} (Méd: ${Math.round(avg)})`;
+    }
+
+    function finishDrill() {
+      isPlaying = false;
+      clearInterval(timerInterval);
+      clearTimeout(spawnTimeout);
+      clearLights();
+      
+      btnStart.disabled = false;
+      difficultySelect.disabled = false;
+      
+      const avg = reactionTimes.length > 0 ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length) : 0;
+      
+      msgDisplay.textContent = "TREINO FINALIZADO";
+      alert(`Fim de Treino!\n\nScore Final: ${score}\nTempo de Reação Médio: ${avg}ms\nAcertos: ${reactionTimes.length}`);
+    }
+
+    function flashScreen(color) {
+      document.body.style.backgroundColor = color;
+      setTimeout(() => {
+        document.body.style.backgroundColor = 'var(--bg-color)';
+      }, 100);
+    }
+
+    // Inicia grid vazio
+    createGrid();
   </script>
-
 </body>
 </html>
